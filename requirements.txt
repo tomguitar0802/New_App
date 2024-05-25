@@ -1,7 +1,4 @@
-time
 numpy
 pandas
 matplotlib
 streamlit
-xlrd
-openpyxl
