@@ -1,0 +1,65 @@
+import time
+import streamlit as st
+import pandas as pd
+import matplotlib.pyplot as plt
+
+t0 = time.time()
+
+Path=st.sidebar.file_uploader('Excelファイル')
+
+if Path is not None:
+    sheet_names=pd.ExcelFile(Path).sheet_names
+    
+    #for extraction
+    df_extract=pd.read_excel(Path,sheet_name=sheet_names[0])
+    BG_starts=df_extract["BG_Start"].to_list()
+    BG_finishes=df_extract["BG_Finish"].to_list()
+    Peak_starts=df_extract["Peak_Start"].to_list()
+    Peak_finishes=df_extract["Peak_Finish"].to_list()
+    
+    #VOC_info
+    df_BG=pd.read_excel(Path,sheet_name=sheet_names[1])
+    mz=df_BG["Exact mass"].to_list()
+    df_BG=df_BG.set_index("VOC species").T
+    df_Peak=pd.read_excel(Path,sheet_name=sheet_names[1])
+    df_Peak=df_Peak.set_index("VOC species").T  
+    
+    #Raw data
+    df_data=pd.read_excel(Path,sheet_name=sheet_names[2])
+    df_data=df_data.drop(columns="Time")
+    df_data=df_data.set_index("Data point")
+    
+    #BG_mean
+    n=0
+    for BG_start,BG_finish in zip(BG_starts,BG_finishes):
+        n=n+1
+        Peak_n="Peak "+str(n)
+        df_BG.loc[Peak_n]=df_data.iloc[BG_start:BG_finish+1].mean()
+        
+    #Peak_mean
+    n=0
+    for Peak_start,Peak_finish in zip(Peak_starts,Peak_finishes):
+        n=n+1
+        Peak_n="Peak "+str(n)
+        df_Peak.loc[Peak_n]=df_data.iloc[Peak_start:Peak_finish+1].mean()
+    
+    #subtract
+    df=df_Peak-df_BG
+    df=df.drop("Exact mass")
+    if st.sidebar.checkbox("negative values to zero",True):
+        df=df.where(df>0,0)
+    st.dataframe(df.T)
+    
+    #mass spectre
+    options=[]
+    for i in range(len(BG_starts)):
+        options.append("Peak "+str(i+1))
+    option=st.sidebar.selectbox("mass spectre for?",options)
+    
+    fig,ax=plt.subplots()
+    ax.ticklabel_format(useOffset=False,useMathText=True)
+    plt.bar(x=mz,
+            height=df.loc[option].to_list())
+    st.pyplot(fig)
+    
+    st.write('Elapsed time[s] =', str(float(time.time() - t0)))
