@@ -1,4 +1,5 @@
 import time
+t0 = time.time()
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -11,13 +12,10 @@ def df_to_xlsx(df):
     processed_data=output.getvalue()
     return processed_data
 
-t0 = time.time()
-
-Path=st.sidebar.file_uploader('Excelファイル')
+Path=st.sidebar.file_uploader('Excel')
 
 if Path is not None:
     sheet_names=pd.ExcelFile(Path).sheet_names
-    st.write(Path.name)
     
     #for extraction
     df_extract=pd.read_excel(Path,sheet_name=sheet_names[0])
@@ -77,6 +75,5 @@ if Path is not None:
     st.write('Elapsed time[s] =', str(float(time.time() - t0)))
     
     #download
-    st.write(Path.name)
     df_xlsx = df_to_xlsx(df.T)
     st.download_button(label="Download Excel", data=df_xlsx, file_name=Path.name.replace(".xlsx","")+"_processed.xlsx")
