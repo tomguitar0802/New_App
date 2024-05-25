@@ -2,6 +2,14 @@ import time
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+from io import BytesIO
+
+@st.cache
+def df_to_xlsx(df):
+    output = BytesIO()
+    df.to_excel(output, index=True, sheet_name="Sheet1")
+    processed_data=output.getvalue()
+    return processed_data
 
 t0 = time.time()
 
@@ -9,6 +17,7 @@ Path=st.sidebar.file_uploader('Excelファイル')
 
 if Path is not None:
     sheet_names=pd.ExcelFile(Path).sheet_names
+    st.write(Path.name)
     
     #for extraction
     df_extract=pd.read_excel(Path,sheet_name=sheet_names[0])
@@ -60,6 +69,14 @@ if Path is not None:
     ax.ticklabel_format(useOffset=False,useMathText=True)
     plt.bar(x=mz,
             height=df.loc[option].to_list())
+    ax.set_xlabel("m/z")
+    ax.set_ylabel("Intensity")
     st.pyplot(fig)
     
+    #time
     st.write('Elapsed time[s] =', str(float(time.time() - t0)))
+    
+    #download
+    st.write(Path.name)
+    df_xlsx = df_to_xlsx(df.T)
+    st.download_button(label="Download Excel", data=df_xlsx, file_name=Path.name.replace(".xlsx","")+"_processed.xlsx")
